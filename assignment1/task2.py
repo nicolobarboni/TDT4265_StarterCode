@@ -16,7 +16,11 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray, model: BinaryModel) -
         Accuracy (float)
     """
     # TODO Implement this function (Task 2c)
-    accuracy = 0.0
+    output = model.forward(X)
+    output = np.where(output >= 0.5, 1, output)
+    output = np.where(output != 1, 0, output)
+    check = output == targets
+    accuracy = np.sum(check == True) / check.shape[0]
     return accuracy
 
 
@@ -35,7 +39,10 @@ class LogisticTrainer(BaseTrainer):
             loss value (float) on batch
         """
         # TODO: Implement this function (task 2b)
-        loss = 0
+        outputs = self.model.forward(X_batch)
+        self.model.backward(X_batch, outputs, Y_batch)
+        self.model.w = self.model.w - learning_rate * model.grad
+        loss = cross_entropy_loss(Y_batch, outputs)
         return loss
 
     def validation_step(self):
@@ -63,7 +70,7 @@ class LogisticTrainer(BaseTrainer):
 
 if __name__ == "__main__":
     # hyperparameters DO NOT CHANGE IF NOT SPECIFIED IN ASSIGNMENT TEXT
-    num_epochs = 50
+    num_epochs = 500
     learning_rate = 0.05
     batch_size = 128
     shuffle_dataset = False
@@ -77,7 +84,6 @@ if __name__ == "__main__":
     X_val = pre_process_images(X_val)
 
     # ANY PARTS OF THE CODE BELOW THIS CAN BE CHANGED.
-
     # Intialize model
     model = BinaryModel()
     # Train model
@@ -97,7 +103,7 @@ if __name__ == "__main__":
     print("Validation accuracy:", calculate_accuracy(X_val, Y_val, model))
 
     # Plot loss for first model (task 2b)
-    plt.ylim([0., .2])
+    plt.ylim([0., 0.2])
     utils.plot_loss(train_history["loss"],
                     "Training Loss", npoints_to_average=10)
     utils.plot_loss(val_history["loss"], "Validation Loss")
